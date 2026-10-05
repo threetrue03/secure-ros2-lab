@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<policy version="0.2.0">
+  <enclaves>
+    <enclave path="/robot/camera"><profiles><profile ns="/" node="camera_node">
+      <topics publish="ALLOW"><topic>camera/frame_meta</topic></topics>
+    </profile></profiles></enclave>
+    <enclave path="/robot/perception"><profiles><profile ns="/" node="perception_node">
+      <topics subscribe="ALLOW"><topic>camera/frame_meta</topic></topics>
+      <topics publish="ALLOW"><topic>perception/target</topic></topics>
+    </profile></profiles></enclave>
+    <enclave path="/robot/navigation"><profiles><profile ns="/" node="navigation_node">
+      <topics subscribe="ALLOW"><topic>perception/target</topic></topics>
+      <topics publish="ALLOW"><topic>cmd_vel</topic></topics>
+    </profile></profiles></enclave>
+    <enclave path="/robot/motor"><profiles><profile ns="/" node="motor_node">
+      <topics subscribe="ALLOW"><topic>cmd_vel</topic><topic>lab/attacker/status</topic></topics>
+    </profile></profiles></enclave>
+    <enclave path="/lab/attacker"><profiles><profile ns="/" node="attacker_node">
+      <topics publish="ALLOW"><topic>lab/attacker/status</topic><topic>parameter_events</topic></topics>
+      <topics publish="DENY"><topic>cmd_vel</topic></topics>
+    </profile></profiles></enclave>
+  </enclaves>
+</policy>

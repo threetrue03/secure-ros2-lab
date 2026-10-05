@@ -1,0 +1,92 @@
+name: secure-ros2-lab
+x-common: &common
+  image: ${LAB_IMAGE:-secure-ros2-lab:jazzy}
+  build: .
+  user: "${LAB_UID:-10001}:${LAB_GID:-10001}"
+  init: true
+  read_only: true
+  cap_drop: [ALL]
+  security_opt: ["no-new-privileges:true"]
+  tmpfs:
+    - /tmp:rw,nosuid,nodev,size=64m,mode=1777
+  networks: [lab]
+  environment: &environment
+    ROS_DOMAIN_ID: "42"
+    RMW_IMPLEMENTATION: rmw_fastrtps_cpp
+    ROS_SECURITY_ENABLE: "true"
+    ROS_SECURITY_STRATEGY: Enforce
+    ROS_SECURITY_KEYSTORE: /keystore
+    LAB_SCOPE: secure-ros2-lab-isolated
+    ROS_LOG_DIR: /tmp/ros-log
+    FASTRTPS_DEFAULT_PROFILES_FILE: /opt/lab/config/fastdds.xml
+services:
+  camera:
+    <<: *common
+    command: [ros2, run, secure_robot, camera_node, --ros-args, --enclave, /robot/camera]
+    volumes:
+      - type: bind
+        source: ./security/runtime/mounts/camera
+        target: /keystore
+        read_only: true
+        bind:
+          create_host_path: false
+  perception:
+    <<: *common
+    command: [ros2, run, secure_robot, perception_node, --ros-args, --enclave, /robot/perception]
+    volumes:
+      - type: bind
+        source: ./security/runtime/mounts/perception
+        target: /keystore
+        read_only: true
+        bind:
+          create_host_path: false
+  navigation:
+    <<: *common
+    command: [ros2, run, secure_robot, navigation_node, --ros-args, --enclave, /robot/navigation]
+    volumes:
+      - type: bind
+        source: ./security/runtime/mounts/navigation
+        target: /keystore
+        read_only: true
+        bind:
+          create_host_path: false
+  motor:
+    <<: *common
+    command: [ros2, run, secure_robot, motor_node, --ros-args, --enclave, /robot/motor]
+    volumes:
+      - type: bind
+        source: ./security/runtime/mounts/motor
+        target: /keystore
+        read_only: true
+        bind:
+          create_host_path: false
+  attacker:
+    <<: *common
+    profiles: [attack]
+    command: [ros2, run, lab_attacker, attacker_node, --ros-args, --enclave, /lab/attacker]
+    volumes:
+      - type: bind
+        source: ./security/runtime/mounts/attacker
+        target: /keystore
+        read_only: true
+        bind:
+          create_host_path: false
+  security-setup:
+    image: ${LAB_IMAGE:-secure-ros2-lab:jazzy}
+    build: .
+    user: "${LAB_UID:-10001}:${LAB_GID:-10001}"
+    profiles: [setup]
+    network_mode: none
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    environment:
+      ROS_SECURITY_ENABLE: "false"
+      ROS_LOG_DIR: /tmp/ros-log
+    volumes:
+      - ./security/runtime:/runtime
+    command: [bash, /opt/lab/security/scripts/setup_security.sh]
+networks:
+  lab:
+    name: secure_ros2_lab
+    driver: bridge
+    internal: true

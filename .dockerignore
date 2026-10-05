@@ -1,0 +1,9 @@
+.git
+.env
+security/runtime
+artifacts
+docs/evidence
+**/__pycache__
+**/build
+**/install
+**/log

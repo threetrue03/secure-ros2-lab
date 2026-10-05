@@ -1,0 +1,34 @@
+name: lab-ci
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  build-and-test:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate repository
+        run: |
+          python3 -m pip install PyYAML
+          python3 scripts/validate_repo.py
+          python3 -m unittest discover -s tests -v
+      - name: Validate Compose configurations
+        run: |
+          docker compose -f compose.insecure.yaml --profile attack config --quiet
+          docker compose -f compose.secure.yaml --profile attack --profile setup config --quiet
+      - name: Build packages and image
+        run: make build
+      - name: Test packages
+        run: make test
+      - name: Exercise insecure and secure delivery
+        run: make integration-test
+      - name: Stop lab
+        if: always()
+        run: make down
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: integration-logs
+          path: artifacts/*-integration.txt
+          if-no-files-found: ignore

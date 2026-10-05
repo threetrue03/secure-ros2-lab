@@ -1,0 +1,15 @@
+.env
+build/
+install/
+log/
+security/runtime/
+security/**/private*
+security/**/*.key
+security/**/*.pem
+artifacts/*
+!artifacts/.gitkeep
+__pycache__/
+*.py[cod]
+.pytest_cache/
+*.egg-info/
+docs/evidence/*.pcap*
